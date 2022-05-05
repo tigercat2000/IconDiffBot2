@@ -8,9 +8,13 @@ version = "0.1.0"
 dependencies = [
  "dmm-tools",
  "dreammaker",
+ "jsonwebtoken",
+ "lazy_static",
  "octocrab",
+ "once_cell",
  "rocket",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
