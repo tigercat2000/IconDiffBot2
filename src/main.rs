@@ -1,89 +1,20 @@
 #![allow(non_snake_case)]
 
+mod github_api;
+mod github_processor;
 mod github_types;
 
 use std::{fs::File, io::Read, path::PathBuf};
 
-use github_types::{Installation, ModifiedFile, PullRequest, PullRequestEventPayload};
 use octocrab::OctocrabBuilder;
 use once_cell::sync::OnceCell;
 // use dmm_tools::dmi::IconFile;
-use rocket::{
-    figment::Figment,
-    get,
-    http::Status,
-    launch, post,
-    request::{self, FromRequest, Outcome},
-    routes, Request,
-};
+use rocket::{figment::Figment, get, launch, routes};
 use serde::Deserialize;
 
 #[get("/")]
 async fn index() -> &'static str {
     "IDB says hello!"
-}
-
-#[derive(Debug)]
-struct GithubEvent(pub String);
-
-#[rocket::async_trait]
-impl<'r> FromRequest<'r> for GithubEvent {
-    type Error = &'static str;
-
-    async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
-        match req.headers().get_one("X-Github-Event") {
-            Some(event) => Outcome::Success(GithubEvent(event.to_owned())),
-            None => Outcome::Failure((Status::BadRequest, "Missing X-Github-Event header")),
-        }
-    }
-}
-
-pub async fn get_pull_files(
-    installation: &Installation,
-    pull: &PullRequest,
-) -> Result<Vec<ModifiedFile>, String> {
-    let res = octocrab::instance()
-        .installation(installation.id.into())
-        .get(
-            &format!(
-                "/repos/{repo}/pulls/{pull_number}/files",
-                repo = pull.base.repo.full_name(),
-                pull_number = pull.number
-            ),
-            None::<&()>,
-        )
-        .await
-        .map_err(|e| format!("{e}"))?;
-
-    Ok(res)
-}
-
-#[post("/payload", format = "json", data = "<payload>")]
-async fn process_github_payload(
-    event: GithubEvent,
-    payload: String,
-) -> Result<&'static str, String> {
-    if event.0 != "pull_request" {
-        return Ok("Not a pull request event");
-    }
-
-    let payload: PullRequestEventPayload =
-        serde_json::from_str(&payload).map_err(|e| format!("{e}"))?;
-
-    let files = get_pull_files(&payload.installation, &payload.pull_request).await?;
-
-    let changed_dmis: Vec<&ModifiedFile> = files
-        .iter()
-        .filter(|e| e.filename.ends_with(".dmi"))
-        .collect();
-
-    if changed_dmis.is_empty() {
-        return Ok("");
-    }
-
-    dbg!(changed_dmis);
-
-    Ok("")
 }
 
 #[derive(Debug, Deserialize)]
@@ -130,5 +61,8 @@ async fn rocket() -> _ {
     ))
     .expect("Octocrab failed to initialise");
 
-    rocket.mount("/", routes![index, process_github_payload])
+    rocket.mount(
+        "/",
+        routes![index, github_processor::process_github_payload],
+    )
 }
