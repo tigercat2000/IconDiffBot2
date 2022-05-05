@@ -1,0 +1,19 @@
+[package]
+name = "IconDiffBot2"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+octocrab = { git = "https://github.com/XAMPPRocky/octocrab" }
+dmm-tools = { git = "https://github.com/SpaceManiac/SpacemanDMM/", features = ["png"] }
+dreammaker = { git = "https://github.com/SpaceManiac/SpacemanDMM/" }
+
+[dependencies.rocket]
+version = "0.5.0-rc.1"
+features = ["json"]
+
+[profile.release]
+debug = true
