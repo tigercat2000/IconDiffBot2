@@ -1,4 +1,5 @@
 /target
 
+.vscode/
 icondiffbot2.pem
 Rocket.toml

@@ -1,4 +1,7 @@
-use crate::github_types::{ModifiedFile, PullRequestEventPayload};
+use crate::{
+    github_api::download_file,
+    github_types::{ModifiedFile, PullRequestEventPayload},
+};
 // use dmm_tools::dmi::IconFile;
 use rocket::{
     http::Status,
@@ -47,5 +50,59 @@ pub async fn process_github_payload(
         return Ok("");
     }
 
+    rocket::tokio::spawn(handle_changed_files(payload, changed_dmis));
+
     Ok("")
+}
+
+pub async fn handle_changed_files(
+    payload: PullRequestEventPayload,
+    changed_dmis: Vec<ModifiedFile>,
+) {
+    for dmi in changed_dmis {
+        match dmi.status {
+            crate::github_types::ModifiedFileStatus::Added => {
+                let new = download_file(
+                    payload.installation.id,
+                    &payload.repository,
+                    &dmi.filename,
+                    &payload.pull_request.head.sha,
+                )
+                .await
+                .unwrap();
+
+                dbg!(&new);
+
+                rocket::tokio::fs::remove_file(new).await.unwrap();
+            }
+            crate::github_types::ModifiedFileStatus::Removed => todo!(),
+            crate::github_types::ModifiedFileStatus::Modified => {
+                let old = download_file(
+                    payload.installation.id,
+                    &payload.repository,
+                    &dmi.filename,
+                    &payload.pull_request.base.sha,
+                )
+                .await
+                .unwrap();
+                let new = download_file(
+                    payload.installation.id,
+                    &payload.repository,
+                    &dmi.filename,
+                    &payload.pull_request.head.sha,
+                )
+                .await
+                .unwrap();
+
+                dbg!(&old, &new);
+
+                rocket::tokio::fs::remove_file(old).await.unwrap();
+                rocket::tokio::fs::remove_file(new).await.unwrap();
+            }
+            crate::github_types::ModifiedFileStatus::Renamed => todo!(),
+            crate::github_types::ModifiedFileStatus::Copied => todo!(),
+            crate::github_types::ModifiedFileStatus::Changed => todo!(),
+            crate::github_types::ModifiedFileStatus::Unchanged => todo!(),
+        }
+    }
 }

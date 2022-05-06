@@ -41,10 +41,23 @@ pub struct PullRequest {
     pub base: Branch,
     pub title: Option<String>,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "snake_case")]
+pub enum ModifiedFileStatus {
+    Added,
+    Removed,
+    Modified,
+    Renamed,
+    Copied,
+    Changed,
+    Unchanged,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ModifiedFile {
     pub filename: String,
-    pub status: String,
+    pub status: ModifiedFileStatus,
     pub sha: String,
 }
 
