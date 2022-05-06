@@ -20,8 +20,9 @@ pub struct Repository {
 }
 
 impl Repository {
-    pub fn full_name(&self) -> String {
-        self.url.split('/').skip(4).collect::<Vec<&str>>().join("/")
+    pub fn full_name(&self) -> (String, String) {
+        let mut iter = self.url.split('/').skip(4).take(2).map(|a| a.to_string());
+        (iter.next().unwrap(), iter.next().unwrap())
     }
 }
 

@@ -38,16 +38,14 @@ pub async fn process_github_payload(
 
     let files = get_pull_files(&payload.installation, &payload.pull_request).await?;
 
-    let changed_dmis: Vec<&ModifiedFile> = files
-        .iter()
+    let changed_dmis: Vec<ModifiedFile> = files
+        .into_iter()
         .filter(|e| e.filename.ends_with(".dmi"))
         .collect();
 
     if changed_dmis.is_empty() {
         return Ok("");
     }
-
-    dbg!(changed_dmis);
 
     Ok("")
 }
