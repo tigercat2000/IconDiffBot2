@@ -1,7 +1,10 @@
+use std::path::PathBuf;
+
 use crate::{
     github_api::download_file,
     github_types::{ModifiedFile, PullRequestEventPayload},
 };
+use dmm_tools::dmi::{Dir, IconFile, Image};
 // use dmm_tools::dmi::IconFile;
 use rocket::{
     http::Status,
@@ -71,7 +74,20 @@ pub async fn handle_changed_files(
                 .await
                 .unwrap();
 
-                dbg!(&new);
+                let file = IconFile::from_file(&new).unwrap();
+
+                let mut canvas = Image::new_rgba(file.metadata.width, file.metadata.height);
+
+                canvas.composite(
+                    &file.image,
+                    (0, 0),
+                    file.rect_of("hot_dispenser", Dir::South).unwrap(),
+                    [0xff, 0xff, 0xff, 0xff],
+                );
+
+                canvas.to_file(&PathBuf::from("test.png"));
+
+                dbg!(&file.metadata);
 
                 rocket::tokio::fs::remove_file(new).await.unwrap();
             }

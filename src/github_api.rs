@@ -39,13 +39,12 @@ pub async fn download_file<S: AsRef<str>>(
 
     rocket::tokio::fs::create_dir_all(path.parent().unwrap()).await?;
     let mut file = File::create(&path).await?;
-    file.write_all(
-        target
-            .decoded_content()
-            .ok_or(Error::DecodeContentFailed)?
-            .as_bytes(),
-    )
-    .await?;
+
+    let download_url = target.download_url.as_ref().ok_or(Error::NoDownloadUrl)?;
+
+    let response = reqwest::get(download_url).await?;
+
+    file.write_all(&response.bytes().await?).await?;
 
     Ok(path)
 }
